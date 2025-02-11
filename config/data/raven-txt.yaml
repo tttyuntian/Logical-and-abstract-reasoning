@@ -1,4 +1,4 @@
 
-dataset_name: "RAVEN"
+dataset_name: "RAVEN_TEXT_MCQA"
 dataset_path: "data/RAVEN/text/center_single_test.jsonl"
 task: "mc_qa"

@@ -1,11 +1,13 @@
 
 metric: "accuracy"
-# eval_device: "cpu"
-max_length: 400
+eval_device: "cpu"
+# max_length: 4096  # only for ARC
+# truncation: true  # only for ARC
 training_arguments:
   output_dir: "fine-tuning-output"
-  per_device_train_batch_size: 64
-  per_device_eval_batch_size: 64
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 64
   num_train_epochs: 3
   learning_rate: 0.0005
 peft:

@@ -1,4 +1,4 @@
 
 dataset_name: "PVR"
-dataset_path: "data/PVR/symbolic/IID/train_complexity0.jsonl"
+dataset_path: "data/PVR/symbolic/IID/test_complexity0_sum.jsonl"
 task: "open_qa"

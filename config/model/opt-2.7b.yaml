@@ -1,0 +1,9 @@
+model_name: "opt-2.7b"
+model_weights: "/gpfs/data/epavlick/tyun/llm_causal_reasoning/llm_visual_reasoning/.cache/huggingface/models--facebook--opt-2.7b"
+task: "open_qa"
+max_new_tokens: 50
+model_args:
+  device_map: "auto"
+tokenizer_args:
+  add_eos_token: true  # for fine-tuning
+  padding_side: 'left'

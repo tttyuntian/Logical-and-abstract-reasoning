@@ -1,0 +1,13 @@
+model_name: "llama2-chat"
+# model_weights: "/data/shared/llama2/llama-2-7b-chat-weights/"
+model_weights: "/gpfs/data/superlab/models/llama2/llama/checkpoints/hf/Llama-2-7b-chat-hf"
+task: "open_qa"
+max_new_tokens: 30
+model_args:
+  load_in_8bit: True
+  device_map: "auto"
+tokenizer_args:
+  # add_eos_token: true  # for fine-tuning
+  padding_side: 'left'
+  # truncation_side: 'left'  # only for ARC
+  # model_max_length: 4096  # only for ARC

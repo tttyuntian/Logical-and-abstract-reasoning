@@ -1,4 +1,4 @@
 
-dataset_name: "RAVEN"
+dataset_name: "RAVEN_SYMBOLIC"
 dataset_path: "data/RAVEN/symbolic/center_single_train.jsonl"
 task: "mc_qa"

@@ -1,6 +1,6 @@
-
 model_name: "llama2"
-model_weights: "/data/shared/llama2/llama-2-7b-chat-weights/"
+# model_weights: "/data/shared/llama2/llama-2-7b-chat-weights/"
+model_weights: "/gpfs/data/superlab/models/llama2/llama/checkpoints/hf/Llama-2-7b-hf"
 task: "open_qa"
 max_new_tokens: 50
 model_args:
