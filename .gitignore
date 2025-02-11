@@ -7,3 +7,7 @@ logs*/
 fine-tuning-output/
 fine-tuning-saves/
 nohup.out*
+data/
+slurm_scripts/
+develop/
+
