@@ -46,7 +46,8 @@ class Evaluator():
 
         answer = re.findall(r'\b\w+\b', answer)
         if len(answer) > 1:
-            print(f"Warning: answer has more than one word: {answer}. Disambiguation attempt.")
+            if self.verbose:
+                print(f"Warning: answer has more than one word: {answer}. Disambiguation attempt.")
             if self.pos_tagging:
                 answer = [ans for ans, tag in nltk.pos_tag(answer) if tag in ["CD", "NN", "NNS", "NNP", "NNPS"]]
             choices = [(i, choice) for i, choice in enumerate(answer) if choice in self.possible_answers]
@@ -54,7 +55,8 @@ class Evaluator():
             if len(choices) == 1:
                 answer = choices[0][1]
             elif len(choices) > 1:
-                print(f"Warning: more than one possible answer: {choices}")
+                if self.verbose:
+                    print(f"Warning: more than one possible answer: {choices}")
                 answer = None if self.select_ans == "none" else choices[0][1] if self.select_ans == "first" else choices[-1][1]
             else:
                 answer = None
@@ -62,7 +64,8 @@ class Evaluator():
         elif len(answer) == 1:
             answer = answer[0]
         else:
-            print(f"Warning: answer is empty: {answer}")
+            if self.verbose:
+                print(f"Warning: answer is empty: {answer}")
             answer = None
         
         return answer == target
@@ -77,12 +80,14 @@ class Evaluator():
 
         answer_search = re.findall(r">>>(.*)\n?", answer)
         if len(answer_search) > 1 and not self.force_code_run:
-            print(f"Warning: answer has more than one line: {answer}. Disambiguation attempt.")
+            if self.verbose:
+                print(f"Warning: answer has more than one line: {answer}. Disambiguation attempt.")
             answer = [ans for ans in answer_search if ans in self.possible_answers]
             if len(answer) == 1:
                 answer = answer[0]
             elif len(answer) > 1:
-                print(f"Warning: more than one possible answer: {answer}")
+                if self.verbose:
+                    print(f"Warning: more than one possible answer: {answer}")
                 answer = None if self.select_ans == "none" else answer[0] if self.select_ans == "first" else answer[-1]
             else:
                 answer = None
@@ -90,7 +95,8 @@ class Evaluator():
             answer = answer_search[0]
         else:
             if not self.force_code_run:
-                print(f"Warning: answer is empty: {answer}. Retrying extraction from the code.")
+                if self.verbose:
+                    print(f"Warning: answer is empty: {answer}. Retrying extraction from the code.")
 
             code_search = re.findall(r"(?:```(?:python)?\n)*((?:\s*def |print\()[^`]*)\n?```", answer, re.DOTALL)
             if len(code_search) == 0:
@@ -113,7 +119,8 @@ class Evaluator():
                 answer += f.getvalue()
             else:
                 print(code_search)
-                print(f"Warning: code failed to run: {code}.\n{abort}\nAborting.")
+                if self.verbose:
+                    print(f"Warning: code failed to run: {code}.\n{abort}\nAborting.")
                 answer = None
 
 
@@ -133,12 +140,14 @@ class Evaluator():
         
         answer_search = re.findall(r"(\w)\.", answer)
         if len(answer_search) > 1:
-            print(f"Warning: answer has more than one line: {answer}.")
+            if self.verbose:
+                print(f"Warning: answer has more than one line: {answer}.")
             answer = None if self.select_ans == "none" else answer_search[0] if self.select_ans == "first" else answer_search[-1]
         elif len(answer_search) == 1:
             answer = answer_search[0]
         else:
-            print(f"Warning: answer is empty: {answer}. Aborting.")
+            if self.verbose:
+                print(f"Warning: answer is empty: {answer}. Aborting.")
             answer = None
         
         return answer == target
@@ -154,13 +163,15 @@ class Evaluator():
         target = re.sub(r"\s+$","", target)
         answer_search = re.findall(r"(?:^|->|(?:answer|Answer|ANSWER|output|output list|function|solution|I)(?: for(?: (?:the|this)? (?:input|test case))? \[[\d,\s]+\])?\s*(?:is|is:|would be|should be|should return|returns|will be|will return|\:))\s*`?([\[\]\(\)\w, ]+)`?", answer)
         if len(answer_search) > 1:
-            print(f"Warning: answer has more than one line: {answer}.")
+            if self.verbose:
+                print(f"Warning: answer has more than one line: {answer}.")
             # answer = None
             answer = answer_search[0] if self.select_ans == "first" else answer_search[-1] if self.select_ans == "last" else None
         elif len(answer_search) == 1:
             answer = answer_search[0]
         else:
-            print(f"Warning: answer is empty: {answer}. Aborting.")
+            if self.verbose:
+                print(f"Warning: answer is empty: {answer}. Aborting.")
             answer = None
 
         if answer is not None:
@@ -175,13 +186,15 @@ class Evaluator():
 
         answer_search = re.findall(r"(?:ANSWER:\s*'?(?:[\s\w\[\]\(\),']+(?:is |be |:))?)"+f"({self.answer_type})", answer)
         if len(answer_search) > 1:
-            print(f"Warning: answer has more than one line: {answer}.")
+            if self.verbose:
+                print(f"Warning: answer has more than one line: {answer}.")
             # answer = None
             answer = answer_search[0] if self.select_ans == "first" else answer_search[-1] if self.select_ans == "last" else None
         elif len(answer_search) == 1:
             answer = answer_search[0]
         else:
-            print(f"Warning: answer is empty: {answer}. Aborting.")
+            if self.verbose:
+                print(f"Warning: answer is empty: {answer}. Aborting.")
             answer = None
 
         if answer is not None:
@@ -204,13 +217,16 @@ class Evaluator():
             target = [ans for ans, tag in nltk.pos_tag(target) if tag in ["CD", "NN", "NNS", "NNP", "NNPS", "JJ", "JJR", "JJS", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "RB", "RBR", "RBS"]]
 
             if len(answer) == 0:
-                print(f"Warning: answer is empty: {answer}")
+                if self.verbose:
+                    print(f"Warning: answer is empty: {answer}")
                 answer = None
             elif len(target) == 0:
-                print(f"Warning: target is empty: {target}")
+                if self.verbose:
+                    print(f"Warning: target is empty: {target}")
                 answer = None
             elif len(answer) != len(set(answer)):
-                print(f"Warning: answer has duplicates: {[ans for ans in answer if answer.count(ans) > 1]}")
+                if self.verbose:
+                    print(f"Warning: answer has duplicates: {[ans for ans in answer if answer.count(ans) > 1]}")
                 answer = None
             
             if answer is not None:
@@ -220,7 +236,8 @@ class Evaluator():
         elif len(answer) == 1:
             answer = answer[0]
         else:
-            print(f"Warning: answer is empty: {answer}")
+            if self.verbose:
+                print(f"Warning: answer is empty: {answer}")
             answer = None
         
         return answer == target
@@ -229,12 +246,14 @@ class Evaluator():
         answer = str(answer)
         answer_search = re.findall(r"(?:ANSWER:)\s*(.*)", answer)
         if len(answer_search) > 1:
-            print(f"Warning: answer has more than one line: {answer}.")
+            if self.verbose:
+                print(f"Warning: answer has more than one line: {answer}.")
             answer = None
         elif len(answer_search) == 1:
             return self._evaluate_multiple_keywords(answer_search[0], target)
         else:
-            print(f"Warning: answer is empty: {answer}. Aborting.")
+            if self.verbose:
+                print(f"Warning: answer is empty: {answer}. Aborting.")
             answer = None
         
         return False
@@ -242,22 +261,28 @@ class Evaluator():
 
 
 
-    def __init__(self, results_file, 
-                        strict=False, 
-                        num=False, 
-                        lt=False, 
-                        code=False, 
-                        test_compiled=False,
-                        force_code_run=False,
-                        pos_tagging=False, 
-                        multiple_choices=False, 
-                        arrow=False,
-                        cot=False,
-                        keywords=False,
-                        keywords_cot=False,
-                        select_ans="first",
-                        answer_type="all"):
-        nltk.download('averaged_perceptron_tagger')
+    def __init__(
+        self, 
+        results_file, 
+        strict=False, 
+        num=False, 
+        lt=False, 
+        code=False, 
+        test_compiled=False,
+        force_code_run=False,
+        pos_tagging=False, 
+        multiple_choices=False, 
+        arrow=False,
+        cot=False,
+        keywords=False,
+        keywords_cot=False,
+        select_ans="first",
+        answer_type="all",
+        verbose=True,
+        download_nltk=True,
+    ):
+        if download_nltk:
+            nltk.download('averaged_perceptron_tagger')
 
         self.results_file = results_file
         self.results_table = pd.read_csv(results_file)
@@ -272,7 +297,8 @@ class Evaluator():
         self.arrow = arrow
         self.cot = cot
         self.keywords = keywords
-        self.keywords_cot = keywords_cot        
+        self.keywords_cot = keywords_cot 
+        self.verbose = verbose
 
         assert answer_type in ["num", "char", "list", "all"], f"answer_type must be one of [num, char, list, all]."
         if answer_type == "num":

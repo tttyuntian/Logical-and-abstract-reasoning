@@ -36,6 +36,7 @@ MODEL_CLASSES = {
     "gpt-2": (GPT2Config, GPT2LMHeadModel, GPT2Tokenizer),
     "llama": (None, AutoModelForCausalLM, AutoTokenizer),
     "llama2": (None, AutoModelForCausalLM, AutoTokenizer),
+    "llama2-chat": (None, AutoModelForCausalLM, AutoTokenizer),
     "alpaca": (None, AutoModelForCausalLM, AutoTokenizer),
     "vicuna": (None, AutoModelForCausalLM, AutoTokenizer),
     "alpaca-lora": (None, AutoModelForCausalLM, AutoTokenizer),
@@ -87,7 +88,11 @@ class HFModel(Model):
         if self.model_config_class is not None:
             self.model_config = self.model_config_class(**self.model_config_args)
         
-        self.model = self.model_class.from_pretrained(self.model_weights, config=self.model_config, **self.model_args)
+        # self.model = self.model_class.from_pretrained(self.model_weights, config=self.model_config, **self.model_args)
+        if self.model_name in ["llama2", "llama2-chat"]:
+            self.model = self.model_class.from_pretrained(self.model_weights, config=self.model_config, **self.model_args)
+        # elif self.model_name == "opt":
+        #     self.model = self.model_class.from_pretrained(self.model_weights, config=self.model_config, cache_dir=, **self.model_args)
         self.tokenizer = self.tokenizer_class.from_pretrained(self.model_weights, **self.tokenizer_args)
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
@@ -98,17 +103,21 @@ class HFModel(Model):
             self.model = self.model.merge_and_unload()
         elif self.adapter_name is not None or self.adapter_weights is not None:
             print(f"Warning: adapter_name and adapter_weights must be both specified to load an adapter. Having {self.adapter_name} and {self.adapter_weights}, respectively. Ignoring adapter.")
-            
 
-        if self.gpu is not None:
+        # Move model to corresponding device
+        # NOTE: When this is a model that has some modules offloaded to cpu or disk, `model.to(self.gpu)` will lead to runtime error, since you can't move such a model to cuda.
+        # NOTE: We only move model that is NOT on cuda to cuda device
+        print(self.model.device)
+        # if self.gpu is not None:
+        if (self.gpu == "cuda") and (self.model.device.type != "cuda"):
             self.model = self.model.to(self.gpu)
 
-    def format_data(self, data: dict, format_labels : bool = False, padding : Union[bool, str] = True, max_length : int = 2048) -> tuple:
+    def format_data(self, data: dict, format_labels : bool = False, padding : Union[bool, str] = True, max_length : int = 2048, truncation : bool = False) -> tuple:
         prompt = self.convert_input_list_to_text(data["input"])
         ideal = data["ideal"]
 
         if not format_labels:
-            tokenized_prompt = self.tokenizer(prompt, return_tensors="pt", padding=padding, max_length=max_length)
+            tokenized_prompt = self.tokenizer(prompt, return_tensors="pt", padding=padding, max_length=max_length, truncation=truncation)
 
             if self.gpu is not None:
                 tokenized_prompt = {k: v.to(self.gpu) for k, v in tokenized_prompt.items()}
@@ -126,7 +135,7 @@ class HFModel(Model):
                 ideal_len = [len(self.tokenizer(ideal)["input_ids"])]
                 complete_prompt = prompt + ideal
             
-            tokenized_prompt = self.tokenizer(complete_prompt, return_tensors="pt", padding=padding, max_length=max_length-1)
+            tokenized_prompt = self.tokenizer(complete_prompt, return_tensors="pt", padding=padding, max_length=max_length-1, truncation=truncation)
             
             if self.gpu is not None:
                 tokenized_prompt = {k: v.to(self.gpu) for k, v in tokenized_prompt.items()}

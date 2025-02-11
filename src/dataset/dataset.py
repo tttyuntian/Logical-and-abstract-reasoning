@@ -11,7 +11,8 @@ import transformers
 
 class EvalsDataset(IterableDataset):
 
-    def __init__(self, dataset_path : str, **kwargs):
+    def __init__(self, dataset_name : str, dataset_path : str, **kwargs):
+        self.dataset_name = dataset_name
         self.dataset_path = dataset_path
         self.length = len(open(dataset_path, "r").readlines())
         self.dataset_file = open(dataset_path, "r")
@@ -92,10 +93,11 @@ class FineTuningDatasetWrapper():
         self.dataset = dataset
         self.tokenize = tokenize
         self.max_length = int(max_length)
+        self.truncation = True if self.dataset.dataset_name == "ARC" else False
 
     def _gen(self):
         for sample in self.dataset:
-            input, label = self.tokenize(sample, format_labels=True, padding="max_length", max_length=self.max_length)
+            input, label = self.tokenize(sample, format_labels=True, padding="max_length", max_length=self.max_length, truncation=self.truncation)
             if isinstance(label, dict) or isinstance(label, transformers.tokenization_utils_base.BatchEncoding):
                 label = label["input_ids"][0]
             else:

@@ -48,6 +48,7 @@ def parse_args():
 # Main
 def main():
     args, kwargs = parse_args()
+    print(kwargs, flush=True)
     
     # Load model config file
     with open(args.model_config, "r") as model_config_file:
@@ -56,15 +57,21 @@ def main():
     # Load dataset config file
     with open(args.dataset_config, "r") as data_config_file:
         data_config = yaml.safe_load(data_config_file)
+    print(f"dataset: {data_config['dataset_name']}", flush=True)
 
     # Initialize loggers
-    logger_name = f"{model_config['model_name']}{'' if 'wrapper' not in model_config else '_' + model_config['wrapper']}_{data_config['dataset_name']}{'' if 'name_kwargs' not in kwargs else '_' + kwargs['name_kwargs']}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-    os.makedirs("logs", exist_ok=True)
-    csv_logger = CSVLogger(f"logs/results_{logger_name}.csv")
+    model_string = f"{model_config['model_name']}_finetuned" if kwargs["is_finetuned"] == "1" else f"{model_config['model_name']}"
+
+    os.makedirs(f"logs/{model_string}/{data_config['dataset_name']}", exist_ok=True)
+    
+    # logger_name = f"{model_config['model_name']}{'' if 'wrapper' not in model_config else '_' + model_config['wrapper']}_{data_config['dataset_name']}{'' if 'name_kwargs' not in kwargs else '_' + kwargs['name_kwargs']}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    # csv_logger = CSVLogger(f"logs/{model_config['model_name']}/{data_config['dataset_name']}/results_{logger_name}.csv")
+    csv_logger = CSVLogger(f"logs/{model_string}/{data_config['dataset_name']}/results.csv")
     loggers = LoggerManager([csv_logger])
 
     error_logger = logging.getLogger(__name__)
-    file_handler = logging.FileHandler(f'logs/error_log_{logger_name}.log')
+    # file_handler = logging.FileHandler(f'logs/{model_config["model_name"]}/{data_config["dataset_name"]}/error_log_{logger_name}.log')
+    file_handler = logging.FileHandler(f'logs/{model_string}/{data_config["dataset_name"]}/error_log.log')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     error_logger.addHandler(file_handler)
@@ -76,10 +83,11 @@ def main():
 
     # Load evaluation dataset
     data = loadDataset(**{**data_config, **kwargs})
-    loader = DataLoader(data, 
-                        num_workers=0,
-                        batch_size=1 if ("batch_size" not in data_config and "batch_size" not in kwargs) else int(kwargs["batch_size"]) if "batch_size" in kwargs else int(data_config["batch_size"])
-                        )
+    loader = DataLoader(
+        data, 
+        num_workers=0,
+        batch_size=1 if ("batch_size" not in data_config and "batch_size" not in kwargs) else int(kwargs["batch_size"]) if "batch_size" in kwargs else int(data_config["batch_size"])
+    )
 
     # Perform evaluation
     nb_lines = len(loader) if "limit" not in kwargs else min(len(loader), int(kwargs["limit"]))
@@ -112,9 +120,9 @@ def main():
             
     evaluator = Evaluator(csv_logger.save_path, **evaluator_kwargs)
     results = evaluator.get_results()
-    print(f"Results: {results}")
+    print(f"Results: {results}", flush=True)
     acc, *res = evaluator.get_accuracy()
-    print(f"Accuracy: {acc}")
+    print(f"Accuracy: {acc}", flush=True)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from src.models.loader import loadModel
 from src.models.hf import HFModel
 from src.dataset.loader import loadDataset
 from src.dataset.dataset import FineTuningDatasetWrapper
+from src.utils import set_seed
 
 
 # Argument Parsing
@@ -63,6 +64,7 @@ class MemSaveTrainer(Trainer):
 
 def main():
     args, kwargs = parse_args()
+    set_seed(int(kwargs["seed"]))
     
     # Load model config file
     with open(args.model_config, "r") as model_config_file:
@@ -87,11 +89,13 @@ def main():
         return metric.compute(predictions=predictions, references=labels)
 
     # Load model
+    print(f"Load model: {model_config['model_name']}.", flush=True)
     model = loadModel(**{**model_config, **kwargs})
     if not isinstance(model, HFModel):
         raise ValueError("Only HFModel supported for finetuning.")
     
     # Convert to PEFT for LoRA
+    print("Convert to PEFT model for LORA.", flush=True)
     if "peft" in trainer_config:
         print(f"Fine-tuning using PEFT: peft_type={trainer_config['peft']['peft_type']}, task_type={trainer_config['peft']['task_type']}")
         peft_config = get_peft_config(trainer_config["peft"])
@@ -100,6 +104,7 @@ def main():
 
 
     # Load evaluation dataset
+    print(f"Load dataset: {data_config['dataset_name']}.", flush=True)
     data = loadDataset(**{**data_config, **kwargs})
     wrapped_data = FineTuningDatasetWrapper(data, tokenize=model.format_data, **{**trainer_config, **kwargs}).get()
 
@@ -121,12 +126,17 @@ def main():
         compute_metrics=compute_metrics
     )
 
+    print("Start training.", flush=True)
     trainer.train()
 
-    save_path = f"fine-tuning-saves/fine-tuned-{model_config['model_name']}-{data_config['dataset_name']}-{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    # save_path = f"fine-tuning-saves/fine-tuned-{model_config['model_name']}-{data_config['dataset_name']}-{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    save_path = f"fine-tuning-saves/fine-tuned-{model_config['model_name']}-{data_config['dataset_name']}-seed{kwargs['seed']}"
     trainer.save_model(save_path)
     model.model.save_pretrained(save_path)
     model.tokenizer.save_pretrained(save_path)
+
+    print(f"Checkpoint saved to: {save_path}", flush=True)
+    print(f"Done!", flush=True)
 
 
 
